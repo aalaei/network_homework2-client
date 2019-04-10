@@ -1,0 +1,329 @@
+# import sys
+import os
+import requests
+import glob
+
+import json
+from sys import stdin
+
+import webbrowser
+
+read = stdin.readline
+tok = 0
+state = 0
+
+
+def sign_up():
+    print ("Welcome, Please enter username:")
+    username = raw_input()
+    if str(username) == "":
+        return
+    print ("well, now please enter password or empty to cancel")
+    passwd = raw_input()
+    if str(passwd) == "":
+        print ("Operation is canceled!")
+        return
+    parms = {"username": username, "password": passwd}
+    uc = geturl("signup")
+    # ali=json.dumps(parms)
+    res = requests.post(uc, parms).json()
+    print (res["message"])
+
+
+def login():
+    print ("Please enter username:")
+    username = raw_input()
+    if str(username) == "":
+        return
+    print ("well, now please enter password or empty to cancel")
+    passwd = raw_input()
+    if str(passwd) == "":
+        print ("Operation is canceled!")
+        return
+    parms = {"username": username, "password": passwd}
+    uc = geturl("login")
+    res = requests.post(uc, parms).json()
+    print (res["message"])
+    global tok
+    tok = res["token"]
+    if str(tok) != "0" and int(res['code']) == 200:
+        global state
+        state = renew_state()
+
+
+def renew_state():
+    if str(tok) == "0":
+        return 0
+    parms = {"token": tok}
+    uc = geturl("getticketmod")
+    res = requests.post(uc, parms).json()
+    code = res["code"]
+    if code == 700:
+        return 1
+    elif code == 200:
+        return 2
+    else:
+        return 0
+
+
+def checklogin():
+    return tok != 0 and tok != "0"
+
+
+def sendticket():
+    if not checklogin():
+        print ("please login first")
+        return
+    print ('enter subject of new ticket:')
+    subj = raw_input()
+    print ("enter body:")
+    body = raw_input()
+    if (subj == "" or body == ""):
+        sendticket()
+        return
+    parms = {"token": tok, "subject": subj, "body": body}
+    uc = geturl("sendticket")
+    res = requests.post(uc, parms).json()
+    print (res["message"])
+
+
+def getticketcli():
+    pass
+
+
+def closeticketcli():
+    if not checklogin():
+        print ("please login first")
+        return
+    if state < 2:
+        print ("you don't have access to this")
+        return
+    print ('enter id of the ticket:')
+    id = int(raw_input())
+    if id == "":
+        closeticketcli()
+        return
+    parms = {"token": tok, "id": id}
+    uc = geturl("closeticket")
+    res = requests.post(uc, parms).json()
+    print (res["message"])
+
+
+def get_ticketadmin():
+    pass
+
+
+def restoticketadmin():
+    if not checklogin():
+        print ("please login first")
+        return
+    if state < 2:
+        print ("you don't have access to this")
+        return
+    print ('enter id of the ticket:')
+    id = int(raw_input())
+    if id == "":
+        closeticketcli()
+        return
+    body = raw_input()
+    if (body == ""):
+        closeticketcli()
+        return
+    parms = {"token": tok, "id": id, "body": body}
+    uc = geturl("restoticketmod")
+    res = requests.post(uc, parms).json()
+    print (res["message"])
+
+
+def changestatusadmin():
+    if not checklogin():
+        print ("please login first")
+        return
+    if state < 2:
+        print ("you don't have access to this")
+        return
+    print ('enter id of the ticket:')
+    id = int(raw_input())
+    if id == "":
+        changestatusadmin()
+        return
+    status = raw_input()
+    if status == "" or (status != "in progress" and status != "close" and status != "open"):
+        changestatusadmin()
+        return
+    parms = {"token": tok, "id": id, "status": status}
+    uc = geturl("changestatus")
+    res = requests.post(uc, parms).json()
+    print (res["message"])
+
+
+def changerole():
+    if not checklogin():
+        print ("please login first")
+        return
+    if state < 2:
+        print ("you don't have access to this")
+        return
+    print ('enter id of the ticket:')
+    id = int(raw_input())
+    if id == "":
+        changerole()
+        return
+    role = raw_input()
+    if role == "":
+        changerole()
+        return
+
+    parms = {"token": tok, "id": id, "role": role}
+    uc = geturl("changerole")
+    res = requests.post(uc, parms).json()
+    print (res["message"])
+
+
+def logout():
+    print ("logging out, enter username:")
+    username = raw_input()
+    if str(username) == "":
+        return
+    print ("password or empty to cancel")
+    passwd = raw_input()
+    if str(passwd) == "":
+        print ("Operation is canceled!")
+        return
+    parms = {"username": username, "password": passwd}
+    uc = geturl("logout")
+    res = requests.post(uc, parms).json()
+    print (res["message"])
+    global tok
+    global state
+    tok = 0
+    state = 0
+
+
+def see_help():
+    webbrowser.open(geturl("help"), new=2)
+
+
+def show_users_list():
+    parms = {}
+    uc = geturl("show")
+    res=requests.get(uc,parms).json()
+    print (res)
+
+
+def clear_all():
+    if not checklogin():
+        print ("please login first")
+        return
+    if state < 2:
+        print ("you don't have access to this")
+        return
+    print ("are you sure?(y/n)")
+    i = read()
+    while "y" != i and i != "n":
+        i = read()
+    if i == "n":
+        return
+
+    print ('enter password for double check:')
+    passwd = str(raw_input())
+    parms = {"token": tok, "password": passwd}
+    uc = geturl("renumberate")
+    res = requests.post(uc, parms).json()
+    print (res["message"])
+
+
+host = "127.0.0.1"
+port = 8888
+
+
+def geturl(comd):
+    return "http://" + host + ":" + str(port) + "/" + comd + "?"
+
+
+if __name__ == "__main__":
+
+    '''switcher = {
+        1: sign_up,
+        2: login,
+        3: sendticket,
+        4: getticketcli,
+        5: closeticketcli,
+        6: get_ticketadmin,
+        7: restoticketadmin,
+        8: changestatusadmin,
+        9: changerole,
+        10: logout,
+        11: see_help,
+        12: show_users_list,
+        13: show_tickets_list,
+        14: clear_all,
+        0: exit
+    }'''
+    switcher_ = []
+    switcher_[0] = {
+        1: sign_up,
+        2: login,
+        3: see_help,
+        4: show_users_list,
+        0: exit
+    }
+    switcher_[1] = {
+        1: show_users_list,
+        2: getticketcli,
+        3: sendticket,
+        4: closeticketcli,
+        5: logout,
+        6: see_help,
+        0: exit
+    }
+    switcher_[2] = {
+
+        1: show_users_list,
+        2: sendticket,
+        3: get_ticketadmin,
+        4: restoticketadmin,
+        5: changestatusadmin,
+        6: changerole,
+        7: logout,
+        8: see_help,
+        9: clear_all,
+        0: exit
+    }
+    exe = switcher_[0]
+    tok = 0
+    on = True
+    while on:
+        if (tok == 0 or tok == "0"):
+            state = 0
+        os.system("clear")
+        print("Choose your action")
+        if state == 0:
+            print ("1)sign up \n2)login \n3)see help in browser\n4)show list of users"
+                   "\n0)exit")
+        elif state == 1:
+            print ("1)show list of users\n2)get ticket(user)\n3)sendticket\n4)close ticket(user)"
+                   "\n5)logout\n6)see help in browser\n0)exit")
+
+        elif state == 2:
+
+            print ("1)show list of users\n2)sendticket\n3)get ticket(admin)"
+                   "\n4)response to ticket(admin)\n5)change status(admin)"
+                   "\n6)change user role\n7)logout\n8)see help in browser\n9)clear all of the db\n0)exit")
+        usr_input = read()
+        try:
+            exe = (switcher_[state])[int(usr_input[:-1])]
+            os.system("clear")
+        except:
+            "syntax error\n"
+        finally:
+            pass
+
+        try:
+            exe()
+            print ("Press any key to continue...")
+            p = raw_input()
+        except:
+            print ("eee")
+        finally:
+            pass
