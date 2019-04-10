@@ -1,16 +1,18 @@
 # import sys
 import os
-import keyboard
 import requests
-import glob
 
-import json
+# import json
 from sys import stdin
 
 import webbrowser
 
 read = stdin.readline
-clear = lambda: os.system('clear')
+
+
+def clear():
+    lambda: os.system('clear')
+
 
 tok = 0
 state = 0
@@ -28,7 +30,6 @@ def sign_up():
         return
     parms = {"username": username, "password": passwd}
     uc = geturl("signup")
-    # ali=json.dumps(parms)
     res = requests.post(uc, parms).json()
     print (res["message"])
 
@@ -130,7 +131,6 @@ def sendticket():
     print ("enter body:")
     body = raw_input()
     if (subj == "" or body == ""):
-        sendticket()
         return
     parms = {"token": tok, "subject": subj, "body": body}
     uc = geturl("sendticket")
@@ -166,7 +166,6 @@ def closeticketcli():
     print ('enter id of the ticket:')
     id = int(raw_input())
     if id == "":
-        closeticketcli()
         return
     parms = {"token": tok, "id": id}
     uc = geturl("closeticket")
@@ -203,12 +202,10 @@ def restoticketadmin():
     print ('enter id of the ticket:')
     id = int(raw_input())
     if id == "":
-        closeticketcli()
         return
     print ('enter body:')
     body = raw_input()
     if body == "":
-        closeticketcli()
         return
     parms = {"token": tok, "id": id, "body": body}
     uc = geturl("restoticketmod")
@@ -226,12 +223,10 @@ def changestatusadmin():
     print ('enter id of the ticket:')
     id = int(raw_input())
     if id == "":
-        changestatusadmin()
         return
     print ('enter new status:(in progress/close/open)')
     status = raw_input()
     if status == "" or (status != "in progress" and status != "close" and status != "open"):
-        changestatusadmin()
         return
     parms = {"token": tok, "id": id, "status": status}
     uc = geturl("changestatus")
@@ -291,9 +286,9 @@ def see_help():
 def usertostr(usr):
     out = "user# "
     try:
-        out = out + str(usr["ID"])+"\n"
+        out = out + str(usr["ID"]) + "\n"
     except:
-        out=out+"\n"
+        out = out + "\n"
     try:
         out = out + "Username: " + usr["username"] + "\n"
     except:
@@ -407,7 +402,7 @@ if __name__ == "__main__":
     on = True
     while on:
 
-        if (tok == 0 or tok == "0"):
+        if tok == 0 or tok == "0":
             state = 0
         clear()
         print("Choose your action")
