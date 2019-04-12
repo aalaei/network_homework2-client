@@ -10,7 +10,6 @@ import webbrowser
 
 read = stdin.readline
 
-
 tok = 0
 state = 0
 
@@ -43,10 +42,14 @@ def pars_status(st):
     return res
 
 
-def printticket(tiket):
+def tickettostr(tiket):
     out = ""
     try:
-        out = out + "ticket# " + str(tiket["id"]) + "\n"
+        out = out + "ticket# " + str(tiket["ID"]) + "\n"
+    except:
+        pass
+    try:
+        out = out + "Send by: " + str(tiket["username"]) + "\n"
     except:
         pass
     try:
@@ -62,9 +65,15 @@ def printticket(tiket):
     except:
         pass
     try:
-        out = out + "body: " + tiket["body"] + "\n" + "------------------" + "\n"
+        out = out + "body: " + tiket["body"] + "\n"
     except:
         pass
+    try:
+        out = out + "$$$$$\n" + "response: " + tiket["response"] + "\n"
+    except:
+        pass
+    finally:
+        out = out + "------------------" + "\n"
     return out
 
 
@@ -150,15 +159,12 @@ def getticketcli():
     for i in range(0, n):
         # print ("tiket #%s", i)
         it = res["block " + str(i)]
-        print(printticket(it))
+        print(tickettostr(it))
 
 
 def closeticketcli():
     if not checklogin():
         print ("please login first")
-        return
-    if state < 2:
-        print ("you don't have access to this")
         return
     print ('enter id of the ticket:')
     id = int(raw_input())
@@ -186,7 +192,7 @@ def get_ticketadmin():
 
     for i in range(0, n):
         it = res["block " + str(i)]
-        print(printticket(it))
+        print(tickettostr(it))
 
 
 def restoticketadmin():
@@ -229,6 +235,22 @@ def changestatusadmin():
     uc = geturl("changestatus")
     res = requests.post(uc, parms).json()
     print (res["message"])
+
+
+def show_tickets_list():
+    if not checklogin():
+        print ("please login first")
+        return
+    if state < 2:
+        print ("you don't have access to this")
+        return
+    parms = {}
+    uc = geturl("showT")
+    res = requests.get(uc, parms).json()
+    n = res["num"]
+    tics = res["tickets"]
+    for i in range(0, n):
+        print (tickettostr(tics[i]))
 
 
 def changerole():
@@ -319,7 +341,7 @@ def clear():
     else:
         os.system('clear')
 
-        
+
 def clear_all():
     if not checklogin():
         print ("please login first")
@@ -341,6 +363,9 @@ def clear_all():
     uc = geturl("renumberate")
     res = requests.post(uc, parms).json()
     print (res["message"])
+    if str(res['code']) == "200":
+        global state
+        state = 0
 
 
 host = "127.0.0.1"
@@ -399,6 +424,7 @@ if __name__ == "__main__":
         7: logout,
         8: see_help,
         9: clear_all,
+        10: show_tickets_list,
         0: exit
     }
     exe = switcher_[0]
@@ -421,8 +447,13 @@ if __name__ == "__main__":
 
             print ("1)show list of users\n2)sendticket\n3)get tickets(admin)"
                    "\n4)response to ticket(admin)\n5)change status(admin)"
-                   "\n6)change user role\n7)logout\n8)see help in browser\n9)clear all of the db\n0)exit")
-        usr_input = read()
+                   "\n6)change user role\n7)logout\n8)see help in browser\n9)clear all of the db\n10)show tickets list\n0)exit")
+        try:
+            usr_input = read()
+        except:
+            print ("not able to read")
+            usr_input = exit
+
         try:
             exe = (switcher_[state])[int(usr_input[:-1])]
             clear()
