@@ -1,6 +1,7 @@
 # import sys
 import os
 import requests
+import platform
 
 # import json
 from sys import stdin
@@ -8,10 +9,6 @@ from sys import stdin
 import webbrowser
 
 read = stdin.readline
-
-
-def clear():
-    lambda: os.system('clear')
 
 
 tok = 0
@@ -316,6 +313,13 @@ def show_users_list():
         print(usertostr(usrs[i]))
 
 
+def clear():
+    if platform.system() == 'Windows':
+        os.system('cls')
+    else:
+        os.system('clear')
+
+        
 def clear_all():
     if not checklogin():
         print ("please login first")
